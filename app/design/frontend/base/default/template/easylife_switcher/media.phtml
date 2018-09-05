@@ -98,7 +98,7 @@
     <li>
         <?php if( $isPod): ?>
 
-        <img style="cursor:pointer;" id="simple-product-id" src="<?php echo $this->helper('catalog/image')->init($this->getProduct(), 'thumbnail', $_image->getFile())->resize($additionalImageSize[0], $additionalImageSize[1]); ?>" alt="<?php echo $subtitle; ?>" title="<?php echo $subtitle; ?>" onclick="spConfig.changeMediaOnClick('<?php echo $subtitle; ?>', <?php echo $this->getProduct()->getID(); ?>);" />
+        <img style="cursor:pointer;" class="simple-product" src="<?php echo $this->helper('catalog/image')->init($this->getProduct(), 'thumbnail', $_image->getFile())->resize($additionalImageSize[0], $additionalImageSize[1]); ?>" alt="<?php echo $subtitle; ?>" title="<?php echo $subtitle; ?>" onclick="spConfig.changeMediaOnClick('<?php echo $subtitle; ?>', <?php echo $this->getProduct()->getID(); ?>);" />
 
         <?php else: ?>
 
