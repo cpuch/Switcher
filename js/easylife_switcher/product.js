@@ -377,25 +377,43 @@ Easylife.Switcher = Class.create(Product.Config, {
         var designImage = this.getConfigValue(this.config, 'pod_settings/design/' + label.toLowerCase() + '/image', false);
 
         // modifie l'attribute onclick des vignettes
-        $$('simple-product-id').each(function(element){
+        $$('.simple-product').each(function(element){
             var alt = element.getAttribute('alt');
             element.setAttribute('onclick', 'spConfig.changeMediaOnClick("' + alt + '",' + product + ')');
         });
-
-        // dessine le canvas
-        var drawOnReady = function(){
-            context.drawImage(this, 0, 0);
+        
+        // Code a revoir.
+        // Le updateMediaOnClick, au chargement de la page est appelé pour chaque attribut.
+        // C'est pas bon, il faut que ca soit appelé une seule fois, lorsque tous les attributs ont été init avec un choix par defaut.
+        // C'est le configureElement de cet objet qui appel le updateMediaOnClic (surcharge de magento par le plugin).
+        // Il faudrait plutot utiliser le configureForValues, qui a l'air d'etre appelé apres le configureElement de chaque attribut.
+        // Mais, si on enleve l'appel a updateMediaOnClic depuis configureElement, alors sur la selection dans une combo, l'update ne se fait plus.
+        
+        // Le membre fullLoad n'est a vrai qu'apres que les configureElement des 3 attribu aient été appelé.
+        // Donc, au chargement de la page rien n'est dessiné.
+        
+        if (this.fullLoad){
+            var loadCount = 0;
+            // dessine le canvas
+            var DrawOnReady = function() {
+                loadCount++;
+                if (loadCount == 2) {         
+                    var canvas = document.getElementById('main-canvas');
+                    var context = canvas.getContext('2d');
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.drawImage(imageTextile, 0, 0);               
+                    context.drawImage(imageDesign, 0, 0);  
+                }
+            };
+            
+            var imageTextile = new Image();
+            imageTextile.src = cachedImageUrl + textileImage;
+            imageTextile.onload = DrawOnReady;
+    
+            var imageDesign = new Image();
+            imageDesign.src = cachedImageUrl  +  designImage;
+            imageDesign.onload = DrawOnReady;    
         }
-        var canvas = document.getElementById('main-canvas');
-        var context = canvas.msGetInputContext('2d');
-        // image du textile
-        var imageTextile = new Image();
-        imageTextile.src = cachedImageUrl + textileImage;
-        imageTextile.onload = drawOnReady;
-        // image du design
-        var imageDesign = new Image();
-        imageDesign.src = cachedImageUrl + designImage;
-        imageDesign.onload = drawOnReady;
 
         //don't call the callback on the first page load
         var callback = this.getConfigValue(this.config, 'custom_switch_image_callback', false);
@@ -455,6 +473,10 @@ Easylife.Switcher = Class.create(Product.Config, {
         }
         else if(switchType == 2) {
             this.changeMediaBlock(product);
+        }
+        else if(switchType == 3) {
+            var alt = $$('.simple-product')[0].getAttribute("alt");
+            this.updateMediaOnClic(alt.toLowerCase(), product);
         }
     },
     /**
