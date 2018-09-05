@@ -103,6 +103,10 @@ class Easylife_Switcher_Block_Catalog_Product_View_Type_Configurable_Config exte
      */
     const XML_USE_CONF_IMAGE        = 'easylife_switcher/settings/use_conf_image';
     /**
+     * config path to media change callback
+     */
+    const XML_CUSTOM_MEDIA_CALLBACK_PATH   = 'easylife_switcher/settings/custom_media_change_callback';
+    /**
      * cache for switch attributes
      * @var array
      */
@@ -270,6 +274,79 @@ class Easylife_Switcher_Block_Catalog_Product_View_Type_Configurable_Config exte
         $config['allow_no_stock_select']    = $this->getAllowNoStockSelect();
         $config['keep_values']              = Mage::getStoreConfigFlag(self::XML_KEEP_SELECTED_VALUES);
         $config['image_size']               = $this->_getImageDimensions(self::XML_OPTIONS_IMAGE_RESIZE);
+
+        /**
+         * Print On Demand settings
+         */
+        $config['custom_switch_media_callback'] = Mage::getStoreConfig(self::XML_CUSTOM_MEDIA_CALLBACK_PATH);
+        $config['pod_settings']['cache_url'] = (string) Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_MEDIA) . 'catalog/product/cache/' . Mage::app()->getStore()->getID() . '/image/265x265/9df78eab33525d08d6e5fb8d27136e95';
+
+        // produit configurable
+        $currentProduct = $this->getProduct();
+        
+        foreach ($this->getAllowProducts() as $product) {
+            $productId = $product->getId();
+            $attributeCoords = $currentProduct->getData('coords');
+            if (!empty($attributeCoords)) {
+                // ajout des coordonnées du design dans la spConfig
+                $imageOrder = array();
+                foreach (explode("|", $attributeCoords) as $coords) {
+                    $coord = explode(":", $coords);
+                    $key = $coord[0];
+                    $imageOrder[] = $key;
+                    foreach (explode(",", $coord[1]) as $coord) {
+                        $coord = explode("=", $coord);
+                        $config['pod_settings']['design'][$key]['coords'][$coord[0]] = (int) $coord[1];
+                    }
+                }
+                // stock l'ordre des images
+                $config['pod_settings']['design']['image_order'] = $imageOrder;
+                // ajout des images du design dans la spConfig
+                $designGallery = Mage::getModel('catalog/product')->load($currentProduct->getId())->getMediaGalleryImages();
+                foreach ($designGallery as $image) {
+                    $label = strtolower($image->getData('label'));
+                    $file = $image->getData('file');
+                    if (!empty($label)) {
+                        $cachedImageUrl = (string) Mage::helper('catalog/image')->init($currentProduct, 'image', $image->getFile())->resize(265,265);
+                        if ($cachedImageUrl === $config['pod_settings']['cache_url'] . $file) {
+                            $config['pod_settings']['design'][$label]['image'] = $file;
+                        } else {
+                            $config['pod_settings']['design'][$label]['image'] = $cachedImageUrl;
+                        }
+                    }
+                }
+
+            }
+
+            $attributeCoords = $product->getData('coords');
+            if (!empty($attributeCoords)) {
+                // ajout des coordonnées des textile dans la spConfig
+                foreach (explode("|", $attributeCoords) as $coords) {
+                    $coord = explode(":", $coords);
+                    $key = $coord[0];
+                    $value = explode(",", $coord[1]);
+                    foreach (explode(",", $coord[1]) as $coord) {
+                        $coord = explode("=", $coord);
+                        $config['pod_settings']['textiles'][$productId][$key]['coords'][$coord[0]] = (int) $coord[1];
+                    }
+                }
+                // ajout des images des textiles dans la spConfig
+                $textileGallery = Mage::getModel('catalog/product')->load($productId)->getMediaGalleryImages();
+                foreach ($textileGallery as $image) {
+                    $label = strtolower( $image->getData('label') );
+                    $file = $image->getData('file');
+                    if (!empty( $label)) {
+                        $cachedImageUrl = (string) Mage::helper('catalog/image')->init($product, 'image', $image->getFile())->resize(265,265);
+                        if ($config['pod_settings']['cache_url'] . $file === $cachedImageUrl) {
+                            $config['pod_settings']['textiles'][$productId][$label]['image'] = $file;
+                        } else {
+                            $config['pod_settings']['textiles'][$productId][$label]['image'] = $cachedImageUrl;
+                        }
+                    }
+                }
+
+            }
+        }
 
         if (!$this->getProduct()->hasPreconfiguredValues()) {
             if ($this->getDefaultValues()) {

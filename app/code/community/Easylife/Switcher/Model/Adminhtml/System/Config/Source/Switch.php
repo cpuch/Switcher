@@ -35,6 +35,10 @@ class Easylife_Switcher_Model_Adminhtml_System_Config_Source_Switch
      */
     const SWITCH_MEDIA  = 2;
     /**
+     * switch custom media block
+     */
+    const SWITCH_CUSTOM  = 3;
+    /**
      * available options
      * @var null|mixed
      */
@@ -59,6 +63,10 @@ class Easylife_Switcher_Model_Adminhtml_System_Config_Source_Switch
             $this->_options[] = array(
                 'value' => self::SWITCH_MEDIA,
                 'label' => Mage::helper('easylife_switcher')->__('Switch all media section')
+            );
+            $this->_options[] = array(
+                'value' => self::SWITCH_CUSTOM,
+                'label' => Mage::helper('easylife_switcher')->__('Custom switch')
             );
         }
         return $this->_options;

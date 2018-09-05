@@ -367,6 +367,46 @@ Easylife.Switcher = Class.create(Product.Config, {
         }
     },
     /**
+     * change the media block on click
+     */
+    changeMediaOnClick: function(label, product){
+
+        // recupère les données de la spConfig
+        var cachedImageUrl = this.getConfigValue(this.config, 'pod_settings/cached_image_url', false);
+        var textileImage = this.getConfigValue(this.config, 'pod_settings/textiles/' + product + '/' + label.toLowerCase() + '/image', false);
+        var designImage = this.getConfigValue(this.config, 'pod_settings/design/' + label.toLowerCase() + '/image', false);
+
+        // modifie l'attribute onclick des vignettes
+        $$('simple-product-id').each(function(element){
+            var alt = element.getAttribute('alt');
+            element.setAttribute('onclick', 'spConfig.changeMediaOnClick("' + alt + '",' + product + ')');
+        });
+
+        // dessine le canvas
+        var drawOnReady = function(){
+            context.drawImage(this, 0, 0);
+        }
+        var canvas = document.getElementById('main-canvas');
+        var context = canvas.msGetInputContext('2d');
+        // image du textile
+        var imageTextile = new Image();
+        imageTextile.src = cachedImageUrl + textileImage;
+        imageTextile.onload = drawOnReady;
+        // image du design
+        var imageDesign = new Image();
+        imageDesign.src = cachedImageUrl + designImage;
+        imageDesign.onload = drawOnReady;
+
+        //don't call the callback on the first page load
+        var callback = this.getConfigValue(this.config, 'custom_switch_image_callback', false);
+        if (this.fullLoad && callback){
+            //callback - give it 0.1 seconds for the image src to be changed
+            //a small flicker might occur
+            //if you don't like it you can remove it at your own risk
+            eval.delay('0.1', callback)
+        }
+    },
+    /**
      * rewrite configureElement to change the main image or media block
      * @param $super
      * @param element
